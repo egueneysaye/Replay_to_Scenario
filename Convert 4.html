@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Convert replay to scenario</title>
+</head>
+<body>
+  <h2>Upload game replay</h2>
+
+  <label>Turn: <input type="number" id="turnInput" min="0" placeholder="0"></label><br><br>
+  <label>Player 1 ammunition: <input type="number" id="ammo1Input" min="0" placeholder="0"></label><br><br>
+  <label>Player 2 ammunition: <input type="number" id="ammo2Input" min="0" placeholder="0"></label><br><br>
+
+  <!-- File upload -->
+  <input type="file" id="fileInput" accept=".json">
+  <br><br>
+
+  <!-- Button to download modified file -->
+  <button id="downloadBtn" disabled>Download Scenario</button>
+
+  <script>
+    let modifiedData = null; // store modified JSON here
+
+    function ReplayToScenario(json, turn, ammo1, ammo2) {
+
+
+                    const name = "Replay of " + json.gameId;
+                    const description = "The state of game " + json.gameId +" at turn";
+                    const type = "preset";
+                    const players = json.players;
+                    const map = json.initialState.map;
+                    const units = json.initialState.units;
+                    const objectives = json.state.objectives;
+                    const triggers = [];
+
+                    const NumberOfUnits = units.length;
+                    const NumberOfObjectives = objectives.length;
+                    const actions = json.actions;
+
+                    players[0].ammoReserve = ammo1;              
+                    players[0].baseAmmoReserve = ammo1;
+                    players[1].ammoReserve = ammo2;              
+                    players[1].baseAmmoReserve = ammo2;
+
+                    function getUnitHealth(t, id){
+                        if(t < 0){
+                            return undefined;
+                        }
+
+                        let result;
+
+                        for(let i = actions[t].length - 1; i > 0; i--){
+                            if("actions" in actions[t][i]){
+                                result = actions[t][i].actions.find(obj => obj.unitId === id && 'hp' in obj);
+                                if(result !== undefined){
+                                    return result.hp;
+                                }
+                            }
+                        }
+
+                        return getUnitHealth(t-1, id);
+                    }
+
+                    function getUnitStamina(t, id){
+                        if(t < 0){
+                            return undefined;
+                        }
+
+                        let result;
+
+                        for(let i = actions[t].length - 1; i > 0; i--){
+                            if("actions" in actions[t][i]){
+                                result = actions[t][i].actions.find(obj => obj.unitId === id && 'st' in obj);
+                                if(result !== undefined){
+                                    return result.st;
+                                }
+                            }
+                        }
+
+                        return getUnitStamina(t-1, id);
+                    }
+
+                    function getUnitOrganisation(t, id){
+                        if(t < 0){
+                            return undefined;
+                        }
+
+                        let result;
+
+                        for(let i = actions[t].length - 1; i > 0; i--){
+                            if("actions" in actions[t][i]){
+                                result = actions[t][i].actions.find(obj => obj.unitId === id && 'org' in obj);
+                                if(result !== undefined){
+                                    return result.org;
+                                }
+                            }
+                        }
+
+                        return getUnitOrganisation(t-1, id);
+                    }
+
+                    function getUnitFormation(t, id){
+                        if(t < 0){
+                            return undefined;
+                        }
+
+                        let result;
+
+                        for(let i = actions[t].length - 1; i > 0; i--){
+                            if("actions" in actions[t][i]){
+                                result = actions[t][i].actions.find(obj => obj.unitId === id && 'formationId' in obj);
+                                if(result !== undefined){
+                                    return result.formationId;
+                                }
+                            }
+                        }
+
+                        return getUnitFormation(t-1, id);
+                    }
+
+                    function getUnitStatus(t, id){
+                        if(t < 0){
+                            return undefined;
+                        }
+
+                        let result;
+
+                        for(let i = actions[t].length - 1; i > 0; i--){
+                            if("actions" in actions[t][i]){
+                                result = actions[t][i].actions.find(obj => obj.unitId === id && 'status' in obj);
+                                if(result !== undefined){
+                                    return result.status;
+                                }
+                            }
+                        }
+
+                        return getUnitStatus(t-1, id);
+                    }
+
+                    function getUnitPosition(t, id){
+                        if(t < 0){
+                            return undefined;
+                        }
+
+                        let result;
+
+                        for(let i = actions[t].length - 1; i > 0; i--){
+                            if("actions" in actions[t][i]){
+                                result = actions[t][i].actions.find(obj => obj.unitId === id && 'path' in obj);
+                                if(result !== undefined){
+                                    return result.path[1];
+                                }
+                            }
+                        }
+
+                        return getUnitPosition(t-1, id);
+                    }
+
+                    function getUnitRotation(t, id){
+                        if(t < 0){
+                            return undefined;
+                        }
+
+                        let result;
+
+                        for(let i = actions[t].length - 1; i > 0; i--){
+                            if("actions" in actions[t][i]){
+                                result = actions[t][i].actions.find(obj => obj.unitId === id && 'rotation' in obj);
+                                if(result !== undefined){
+                                    return result.rotation;
+                                }
+                            }
+                        }
+
+                        return getUnitRotation(t-1, id);
+                    }
+
+                    function getUnitAction(t, id){
+                        if(t < 0){
+                            return undefined;
+                        }
+
+                        let result;
+
+                        for(let i = actions[t].length - 1; i > 0; i--){
+                            if("actions" in actions[t][i]){
+                                result = actions[t][i].actions.find(obj => obj.unitId === id && 'ac' in obj);
+                                if(result !== undefined){
+                                    return result.ac;
+                                }
+                            }
+                        }
+
+                        return getUnitAction(t-1, id);
+                    }
+
+                    function getObjectiveHolder(t, id){
+                        if(t < 0){
+                            return undefined;
+                        }
+
+                        let result;
+                        for(let i = actions[t].length - 1; i > 0; i--){
+                            if("actions" in actions[t][i]){
+                                result = actions[t][i].actions.find(obj => obj.objectiveId === id && 'player' in obj);
+                                if(result !== undefined){
+                                    return result.player;
+                                }
+                            }
+                        }
+
+                        return getObjectiveHolder(t-1, id);
+                    }
+
+                    for(var i = 0; i < NumberOfUnits; i++){
+                        let Id = units[i].id;
+
+                        let Hp = getUnitHealth(turn, Id);
+                        if(Hp !== undefined){
+                            units[i].hp = Hp;
+                        }
+
+                        let St = getUnitStamina(turn, Id);
+                        if(St !== undefined){
+                            units[i].st = St;
+                        }
+
+                        let Org = getUnitOrganisation(turn, Id);
+                        if(Org !== undefined){
+                            units[i].org = Org;
+                        }
+
+                        let Form = getUnitFormation(turn, Id);
+                        if(Form !== undefined){
+                            units[i].f = Form;
+                        }
+
+                        let Status = getUnitStatus(turn, Id);
+                        if(Status !== undefined){
+                            units[i].status = Status;
+                        }
+
+                        let Rotation = getUnitRotation(turn, Id);
+                        if(Rotation !== undefined){
+                            units[i].rotation = Rotation;
+                        }
+
+                        let Position = getUnitPosition(turn, Id);
+                        if(Position !== undefined){
+                            units[i].pos = {"x": Position[0], "y": Position[1]};
+                        }
+
+                        let Action = getUnitAction(turn, Id);
+                        if(Action !== undefined){
+                            units[i].ac = Action;
+                        }
+
+                        delete units[i].id;
+                    }
+
+                    
+                    let obid;
+                    for(let i = 0; i < NumberOfObjectives; i++){
+                        obid = objectives[i].id;
+                        let holder = getObjectiveHolder(turn, obid);
+                        if(holder !== undefined){
+                            objectives[i].player = holder;
+                            objectives[i].team = holder;
+                        }
+                    }
+
+                    const armyPowerDifference1 = json.initialState.teams[0].armyPower - actions[turn][0].teams[0].armyPower;                   
+                    const armyPowerDifference2 = json.initialState.teams[1].armyPower - actions[turn][0].teams[1].armyPower;
+
+                    const skirms1 = Math.round(armyPowerDifference1 / 50);
+                    const skirms2 = Math.round(armyPowerDifference2 / 50);
+
+                    let skirm_name = "";
+                    for(i = 0; i < skirms1; i++){
+                        skirm_name = "delete1" + i.toString();
+                        units.push({
+                            "name":skirm_name,
+                            "player": 1,
+                            "pos": {
+                                "x": 0,
+                                "y": 0
+                            },
+                            "rotation": 0,
+                            "type":16
+                        });
+                        triggers.push({
+                            
+                            "event": "onTurnStart",
+                            "conditions": [
+                            {
+                                "type": "isTurn",
+                                "value": 1
+                            }
+                            ],
+                            "conditionLogic": "AND",
+                            "actions": [
+                            {
+                                "type": "removeUnit",
+                                "value": [skirm_name],
+                                "once": true
+                            }
+                        ]
+                        });
+                    }
+
+                    for(i = 0; i < skirms2; i++){
+                        skirm_name = "delete2" + i.toString();
+                        units.push({
+                            "name":skirm_name,
+                            "player": 2,
+                            "pos": {
+                                "x": 0,
+                                "y": 0
+                            },
+                            "rotation": 0,
+                            "type":16
+                        });
+                        triggers.push({
+                            
+                            "event": "onTurnStart",
+                            "conditions": [
+                            {
+                                "type": "isTurn",
+                                "value": 1
+                            }
+                            ],
+                            "conditionLogic": "AND",
+                            "actions": [
+                            {
+                                "type": "removeUnit",
+                                "value": [skirm_name],
+                                "once": true
+                            }
+                        ]
+                        });
+                    }
+
+
+                    const replay = {
+                        "name":name,
+                        "description":description,
+                        "type":type,
+                        "players":players,
+                        "map":map,
+                        "units":units,
+                        "objectives":objectives,
+                        "triggers":triggers
+                    };
+                return replay;
+    }
+
+    // Handle file upload
+    document.getElementById("fileInput").addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const json = JSON.parse(e.target.result); // parse uploaded JSON
+
+          const turn = parseFloat(document.getElementById("turnInput").value) || 0;
+          const ammo1 = parseFloat(document.getElementById("ammo1Input").value) || 0;
+          const ammo2 = parseFloat(document.getElementById("ammo2Input").value) || 0;
+
+          // Ensure non-negative
+          if (turn < 0 || ammo1 < 0 || ammo2 < 0) {
+            alert("Values cannot be negative. Using 0 for invalid inputs.");
+          }
+
+          modifiedData = ReplayToScenario(json, turn, ammo1, ammo2);    // modify it
+          alert("File loaded and modified successfully!");
+          document.getElementById("downloadBtn").disabled = false; // enable download
+        } catch (err) {
+          alert("Error parsing JSON: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // Handle download of modified JSON
+    document.getElementById("downloadBtn").addEventListener("click", function() {
+      if (!modifiedData) return;
+
+      const jsonStr = JSON.stringify(modifiedData, null, 2); // pretty print
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "replay.json"; // suggested filename
+      document.body.appendChild(a); // required for Firefox
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
