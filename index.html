@@ -31,6 +31,8 @@
                     const units = json.initialState.units;
                     const objectives = json.state.objectives;
                     const triggers = [];
+                    const allowDynamicArmy = json.allowDynamicArmy;
+                    const customUnitTemplates = json.customUnitTemplates ?? [];
 
                     const NumberOfUnits = units.length;
                     const NumberOfObjectives = objectives.length;
@@ -348,7 +350,9 @@
                         "map":map,
                         "units":units,
                         "objectives":objectives,
-                        "triggers":triggers
+                        "triggers":triggers,
+                        "allowDynamicArmy": allowDynamicArmy,
+                        "customUnitTemplates": customUnitTemplates
                     };
                 return replay;
     }
